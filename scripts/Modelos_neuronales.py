@@ -39,14 +39,13 @@ def hh_multirate(
     plot: bool = True,
 ) -> Tuple[np.ndarray, np.ndarray]:
     
-    """ Neurona 1 presináptica conectada por sinpaisis química (modelo de neurotransmisores de liberación contínua) con neurona 2 postsináptica. Las dinámicas 
-        HH siguen el esquema mutirate de paso rápido en el potencial y paso lento en los canales. La neurona 1 tiene integración en un sistema complejo 
-        mediante el modelo Point-conductance (I_syn_sistem) y ambas neuronas tienen aporte externo (I1 e I2) que puede ser gaussiano o OH.
+    """ 
+        Presynaptic Neuron 1 connected via a chemical synapse (continuous neurotransmitter release model) to postsynaptic Neuron 2. The Hodgkin–Huxley (HH)            dynamics follow a multirate scheme with a fast step for the membrane potential and a slow step for the ion channels. Neuron 1 is embedded in a complex         system through the point-conductance model (I_syn_sistem), and both neurons receive external input (I1 e I2) that can be Gaussian or Ornstein–                 Uhlenbeck (OU).
     
         Parameters
     ----------
     T :
-        Total simulation time. T = 400 --> 40 seconds
+        Total simulation time. T = 400
 
     dt :
         Time step.
@@ -104,8 +103,7 @@ def hh_multirate(
         Membrane potential of neuron 2 (with synaptic coupling).
     """
 
-    np.random.seed(42)
-
+    #np.random.seed(42)
 
     # ======================
     # PARÁMETROS HH
@@ -137,7 +135,7 @@ def hh_multirate(
     # ======================
     dt_lento = dt*10
     V_steps = int(T / dt)
-    delay_steps = int(tau / dt)   #convertimos el delay en pasos discretos
+    delay_steps = int(tau / dt)
     canales_steps = int(T / dt_lento)
     t_eval = np.linspace(0, T, V_steps)
 
@@ -149,9 +147,9 @@ def hh_multirate(
         exp_term = np.exp(-theta1 * dt)
         std_term = sigma1 * np.sqrt((1 - np.exp(-2 * theta1 * dt)) / (2 * theta1))
         for i in range(V_steps - 1):
-            xi = np.random.randn()  # N(0,1)
+            xi = np.random.randn()  
             I1[i+1] = I1[i] * exp_term + mu1 * (1 - exp_term) + std_term * xi        # solución exacta proceso OU
-        I1 += cte1              #ruido OU (con memoria)
+        I1 += cte1
     else:
         I1 = cte1 + mu1 + sigma1 * np.random.randn(V_steps)
         
@@ -162,9 +160,9 @@ def hh_multirate(
         for i in range(V_steps - 1):
             xi = np.random.randn()  # N(0,1)
             I2[i+1] = I2[i] * exp_term + mu2 * (1 - exp_term) + std_term * xi        # solución exacta proceso OU
-        I2 += cte2              #ruido OU (con memoria)
+        I2 += cte2              
     else:
-        I2 = cte2 + mu2 + sigma2 * np.random.randn(V_steps)    #ruido blanco gaussiano (sin memoria)
+        I2 = cte2 + mu2 + sigma2 * np.random.randn(V_steps) 
     
 
     # ======================
@@ -174,11 +172,11 @@ def hh_multirate(
     # (Valores típicos del paper Destexhe et al.)
     # Excitatorio
     #ge0 = 0.0121   (uS)
-    Ee = 0.0      # Potencial de inversión (mV)
+    Ee = 0.0      # (mV)
     
     # Inhibitorio
     # gi0 = 0.0573   (uS)
-    Ei = -75.0    # Potencial de inversión (mV)
+    Ei = -75.0    #  (mV)
     
     ge = np.zeros(V_steps)
     gi = np.zeros(V_steps)
@@ -233,10 +231,10 @@ def hh_multirate(
             # Neurona 1 HH 
         am1, bm1, ah1, bh1, an1, bn1 = get_rates(V1_med)   
         tau_m = 1.0 / (am1 + bm1)  
-        tau_h = 1.0 / (ah1 + bh1)    #constantes de tiempo
+        tau_h = 1.0 / (ah1 + bh1)   
         tau_n = 1.0 / (an1 + bn1)
         m_inf = am1 / (am1 + bm1)  
-        h_inf = ah1 / (ah1 + bh1)      #valor infinito
+        h_inf = ah1 / (ah1 + bh1)      
         n_inf = an1 / (an1 + bn1)
         #Canales ionicos mediante integración exponencial
         m1[next_j] = m_inf + (m1[j] - m_inf) * np.exp(-dt_lento / tau_m) 
@@ -246,10 +244,10 @@ def hh_multirate(
             # Neurona 2 (CON sinapsis) 
         am2, bm2, ah2, bh2, an2, bn2 = get_rates(V2_med)
         tau_m = 1.0 / (am2 + bm2)  
-        tau_h = 1.0 / (ah2 + bh2)    #constantes de tiempo
+        tau_h = 1.0 / (ah2 + bh2)    
         tau_n = 1.0 / (an2 + bn2)
         m_inf = am2 / (am2 + bm2)  
-        h_inf = ah2 / (ah2 + bh2)      #valor infinito
+        h_inf = ah2 / (ah2 + bh2)     
         n_inf = an2 / (an2 + bn2)
         #Canales ionicos mediante integración exponencial
         m2[next_j] = m_inf + (m2[j] - m_inf) * np.exp(-dt_lento  / tau_m) 
@@ -259,10 +257,10 @@ def hh_multirate(
             # Neurona 2 (SIN sinapsis) 
         am2n, bm2n, ah2n, bh2n, an2n, bn2n = get_rates(V2_no_med)
         tau_m = 1.0 / (am2n + bm2n)  
-        tau_h = 1.0 / (ah2n + bh2n)    #constantes de tiempo
+        tau_h = 1.0 / (ah2n + bh2n)    
         tau_n = 1.0 / (an2n + bn2n)
         m_inf = am2n / (am2n + bm2n)  
-        h_inf = ah2n / (ah2n + bh2n)      #valor infinito
+        h_inf = ah2n / (ah2n + bh2n)      
         n_inf = an2n / (an2n + bn2n)
         #Canales ionicos mediante integración exponencial
         m2n[next_j] = m_inf + (m2n[j] - m_inf) * np.exp(-dt_lento  / tau_m) 
@@ -294,7 +292,7 @@ def hh_multirate(
             ge[i+1] = ge0 + (ge[i] - ge0) * exp_e + std_term_e * np.random.randn()
             # g inhibitoria                                                                        # Proceso OU (solución exacta)
             gi[i+1] = gi0 + (gi[i] - gi0) * exp_i + std_term_i * np.random.randn()
-            # Evitar conductancias negativas (restricción física)
+            # Evitar conductancias negativas
             ge[i+1] = max(ge[i+1], 0)
             gi[i+1] = max(gi[i+1], 0)
     
@@ -432,7 +430,9 @@ def izhikevich(
     V2 = np.zeros(n_steps)
     U2 = np.zeros(n_steps)
 
-    # condiciones iniciales
+    # ======================
+    # CONDICIONES INICIALES
+    # ======================
     V1[0] = -65
     U1[0] = b1 * V1[0]
 
